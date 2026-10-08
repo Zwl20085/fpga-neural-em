@@ -235,15 +235,6 @@ figcaption { font-size: 0.9rem; color: var(--muted); margin-top: 12px; }
   .timeline li::before { left: -32px; top: 4px; }
 }
 
-/* Contact ---------------------------------------------------------------- */
-.person { font-size: 1.15rem; font-weight: 600; color: var(--navy); }
-address { font-style: normal; margin-bottom: 1em; line-height: 1.55; }
-ul.plain { list-style: none; padding: 0; margin: 0; }
-ul.plain li { margin-bottom: 0.6em; }
-.placeholder { color: var(--amber); font-style: italic; font-weight: 500; }
-.placeholder::before { content: "⟨ "; font-style: normal; }
-.placeholder::after { content: " ⟩"; font-style: normal; }
-
 /* References ------------------------------------------------------------- */
 .refs { padding-left: 1.6em; font-size: 0.97rem; }
 .refs li { margin-bottom: 0.75em; padding-left: 4px; }

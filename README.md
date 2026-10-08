@@ -1,6 +1,6 @@
 # FPGA Deployment of AI for Science and Engineering
 
-**Neural Electromagnetic Models for Electrical Machines** is the research-project website that accompanies an AMD University Program hardware-donation request for one ZCU102 Zynq UltraScale+ MPSoC Evaluation Kit.
+**Neural Electromagnetic Models for Electrical Machines** is the website for a research project on deploying neural electromagnetic field models on an AMD ZCU102 Zynq UltraScale+ MPSoC.
 
 Live site: https://zwl20085.github.io/fpga-neural-em/
 
@@ -8,17 +8,7 @@ This is a static site: plain HTML, CSS and JavaScript, with no build step and no
 
 ## Edit project details
 
-Every person-, affiliation- and publication-specific value is set in **`assets/js/site-config.js`**.
-A value left as `null` (or an empty list) is shown on the page as a marked placeholder.
-
-| Field | Purpose |
-|---|---|
-| `leadName`, `leadRole`, `email`, `profileUrl` | Project lead |
-| `affiliationConfirmed` | Set `true` to show the PEMC / University of Nottingham affiliation and postal address |
-| `team`, `publications` | Lists, e.g. `{ name, role }`, `{ citation, url }` |
-| `repositories.hairpinFE`, `repositories.hairpinAI` | Add URLs **only** once the repositories are public |
-
-The page `<title>`, description and Open Graph tags are at the top of `index.html`. They are static because crawlers do not run JavaScript.
+`assets/js/site-config.js` holds the editable values: the repository links (add a URL **only** once a repository is public) and the last-updated date. The page `<title>`, description and Open Graph tags are at the top of `index.html`.
 
 ## Preview locally
 
@@ -40,4 +30,4 @@ GitHub Pages serves the `main` branch root. Pushing to `main` republishes the si
 
 ## Factual sources
 
-ZCU102 hardware facts are taken from AMD UG1182 (v1.7, Feb. 2023). No FPGA results, speed-ups or power figures are claimed, because none exist yet. AMD support is described as requested, not awarded.
+ZCU102 hardware facts are taken from AMD UG1182 (v1.7, Feb. 2023). No FPGA results, speed-ups or power figures are claimed, because none exist yet.

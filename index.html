@@ -41,7 +41,7 @@
       <li><a href="#approach">Approach</a></li>
       <li><a href="#hardware">Hardware</a></li>
       <li><a href="#roadmap">Roadmap</a></li>
-      <li><a href="#contact">Contact</a></li>
+      <li><a href="#references">References</a></li>
     </ul>
   </nav>
 </header>
@@ -51,7 +51,7 @@
 <section class="hero" id="top" aria-labelledby="hero-title">
   <div class="wrap hero-grid">
     <div class="hero-copy">
-      <p class="eyebrow">Research project · AMD University Program hardware request</p>
+      <p class="eyebrow">Research project</p>
       <h1 id="hero-title">FPGA Deployment of AI for Science and Engineering</h1>
       <p class="subtitle">Neural Electromagnetic Models for Electrical Machines</p>
       <p class="lede">Coordinate-based neural networks can reproduce the magnetic field inside an electrical machine at any point, rotor position and operating condition. This project asks whether such models can run on embedded FPGA hardware <em>without losing the accuracy of the engineering quantities derived from them</em>: flux density, torque, torque ripple, stored energy and iron loss.</p>
@@ -128,7 +128,7 @@
     <div class="section-head reveal">
       <p class="eyebrow">Existing foundation</p>
       <h2 id="foundation-title">Two research frameworks already in place</h2>
-      <p class="section-intro">The project starts from working software developed by the team. Both repositories are currently private research code; access can be arranged for reviewers on request.</p>
+      <p class="section-intro">The project starts from existing, working research software. Both repositories are currently private research code.</p>
     </div>
     <div class="cards two">
       <article class="card reveal">
@@ -136,14 +136,14 @@
         <p class="kicker">Finite-element modelling and electromagnetic postprocessing</p>
         <p>A modular two-dimensional finite-element package for rotating electrical machines. It builds the geometry from parameters, meshes it, solves the nonlinear magnetostatic or transient field, and rotates the rotor on a moving band. From the solution it computes torque, losses, inductances and related quantities.</p>
         <p>In this project HairpinFE provides the <strong>reference data</strong> for training and the <strong>reference postprocessing</strong> against which embedded results are judged.</p>
-        <p class="repo" id="cfg-repo-fe"><span class="muted">Repository: private, available to reviewers on request</span></p>
+        <p class="repo" id="cfg-repo-fe"><span class="muted">Repository: private research code</span></p>
       </article>
       <article class="card reveal">
         <div class="card-top"><h3>Hairpin_AI</h3><span class="tag tag-existing">Existing</span></div>
         <p class="kicker">Neural electromagnetic field modelling</p>
         <p>A PyTorch framework of coordinate-based neural field models. Each model takes one row (machine design parameters, operating condition, rotor position, and spatial coordinates) and returns the magnetic vector potential A<sub>z</sub> at that point. Because the model is a function rather than a grid, it can be evaluated on the FE mesh, on a finer grid, or at a single sensor location.</p>
         <p>Relevant architectures include residual MLPs with Fourier coordinate encoding and GELU activations, with optional rotor-frame features. A versioned input–output schema is stored with every checkpoint, so a separate inference engine can rebuild the model exactly.</p>
-        <p class="repo" id="cfg-repo-ai"><span class="muted">Repository: private, available to reviewers on request</span></p>
+        <p class="repo" id="cfg-repo-ai"><span class="muted">Repository: private research code</span></p>
       </article>
     </div>
     <figure class="diagram reveal">
@@ -217,9 +217,9 @@
 <section id="hardware" class="section" aria-labelledby="hardware-title">
   <div class="wrap">
     <div class="section-head reveal">
-      <p class="eyebrow">Hardware request and justification</p>
+      <p class="eyebrow">Target hardware and justification</p>
       <h2 id="hardware-title">One AMD ZCU102 Zynq UltraScale+ MPSoC Evaluation Kit</h2>
-      <p class="section-intro">The project requests the ZCU102 through the AMD University Program donation scheme. This support has been <strong>requested, not awarded</strong>.</p>
+      <p class="section-intro">The integrated research demonstrator is planned around this board. The features relied on and the reasons for the choice are set out below.</p>
     </div>
 
     <div class="hw-grid">
@@ -250,7 +250,7 @@
 
     <aside class="note reveal" aria-labelledby="kv260-title">
       <h3 id="kv260-title">Relation to smaller platforms</h3>
-      <p>A Kria KV260 Vision AI Starter Kit can support custom arithmetic and preliminary inference experiments, and the inference kernels developed here are intended to remain portable to such devices. The ZCU102 is not mathematically required for every model. It is requested because of the scope of the <strong>integrated research demonstrator</strong>: precision exploration, inference, postprocessing and acquisition, all on one device with the FMC expansion needed for HIL work.</p>
+      <p>A Kria KV260 Vision AI Starter Kit can support custom arithmetic and preliminary inference experiments, and the inference kernels developed here are intended to remain portable to such devices. The ZCU102 is not mathematically required for every model. It is chosen because of the scope of the <strong>integrated research demonstrator</strong>: precision exploration, inference, postprocessing and acquisition, all on one device with the FMC expansion needed for HIL work.</p>
     </aside>
 
     <h3 class="arch-title reveal" id="arch-title">Proposed hardware–software architecture</h3>
@@ -380,41 +380,13 @@
   </div>
 </section>
 
-<!-- CONTACT --------------------------------------------------------------- -->
-<section id="contact" class="section" aria-labelledby="contact-title">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <p class="eyebrow">Team and contact</p>
-      <h2 id="contact-title">People</h2>
-    </div>
-    <div class="cards two">
-      <article class="card reveal">
-        <h3>Project lead</h3>
-        <p class="person"><span data-cfg="leadName" data-placeholder="Name to be confirmed">Name to be confirmed</span><br>
-        <span class="muted" data-cfg="leadRole" data-placeholder="Role to be confirmed">Role to be confirmed</span></p>
-        <p><span id="cfg-affiliation" class="placeholder">Institutional affiliation to be confirmed</span></p>
-        <address id="cfg-address" hidden></address>
-        <p id="cfg-email" class="placeholder">Email address to be confirmed</p>
-        <p id="cfg-profile"></p>
-      </article>
-      <article class="card reveal">
-        <h3>Team</h3>
-        <ul id="cfg-team" class="plain"><li class="placeholder">Further team members to be confirmed</li></ul>
-        <h3 class="mt">Related publications</h3>
-        <ul id="cfg-publications" class="plain"><li class="placeholder">Publication list to be added by the project team</li></ul>
-      </article>
-    </div>
-  </div>
-</section>
-
 <!-- REFERENCES ------------------------------------------------------------ -->
-<section id="references" class="section tint" aria-labelledby="references-title">
+<section id="references" class="section" aria-labelledby="references-title">
   <div class="wrap narrow">
     <p class="eyebrow">Technical references</p>
     <h2 id="references-title">References</h2>
     <ol class="refs">
       <li id="ref-ug1182">AMD (Xilinx), <cite>ZCU102 Evaluation Board User Guide</cite>, UG1182 (v1.7), Feb. 2023. <a href="https://docs.amd.com/api/khub/documents/rt6tROKcAceWoROXFPMY5w/content" rel="noopener">PDF</a></li>
-      <li>AMD, <cite>AMD University Program: Donation Program</cite>. <a href="https://www.amd.com/en/corporate/university-program/donation-program.html" rel="noopener">Web page</a></li>
       <li>M. Tancik <i>et al.</i>, “Fourier features let networks learn high frequency functions in low dimensional domains,” in <cite>Proc. NeurIPS</cite>, 2020. <a href="https://arxiv.org/abs/2006.10739" rel="noopener">arXiv:2006.10739</a></li>
       <li>K. He, X. Zhang, S. Ren and J. Sun, “Deep residual learning for image recognition,” in <cite>Proc. IEEE CVPR</cite>, 2016, pp. 770–778. <a href="https://doi.org/10.1109/CVPR.2016.90" rel="noopener">doi:10.1109/CVPR.2016.90</a></li>
       <li>D. Hendrycks and K. Gimpel, “Gaussian error linear units (GELUs),” 2016. <a href="https://arxiv.org/abs/1606.08415" rel="noopener">arXiv:1606.08415</a></li>
@@ -432,7 +404,7 @@
 <footer class="site-footer">
   <div class="wrap footer-grid">
     <p><strong>FPGA Deployment of AI for Science and Engineering: Neural Electromagnetic Models for Electrical Machines</strong></p>
-    <p class="muted-inv">This page describes a proposed research project. Hardware support from AMD has been requested through the AMD University Program and has not been awarded. AMD, Zynq, UltraScale+ and Kria are trademarks of Advanced Micro Devices, Inc. Their use here does not imply endorsement. All illustrations are schematic.</p>
+    <p class="muted-inv">This page describes a proposed research project. AMD, Zynq, UltraScale+ and Kria are trademarks of Advanced Micro Devices, Inc. Their use here does not imply endorsement. All illustrations are schematic.</p>
     <p class="muted-inv">Last updated <span id="cfg-updated">8 October 2026</span>.</p>
   </div>
 </footer>
