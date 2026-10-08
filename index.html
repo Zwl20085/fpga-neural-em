@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FPGA Deployment of Neural Electromagnetic Models for Electrical Machines</title>
+<meta name="description" content="Research project on deploying coordinate-based neural electromagnetic field models for electrical machines on AMD Zynq UltraScale+ FPGA hardware: precision-aware inference, electromagnetic postprocessing, and a hardware-in-the-loop demonstrator.">
+<meta name="theme-color" content="#13294b">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="FPGA Deployment of AI for Science and Engineering">
+<meta property="og:description" content="Neural electromagnetic models for electrical machines, from finite-element reference data to precision-aware FPGA inference and hardware-in-the-loop validation.">
+<meta property="og:image" content="https://zwl20085.github.io/fpga-neural-em/assets/img/og-image.png">
+<meta property="og:image:alt" content="Project title beside an illustrated machine cross-section with flux lines.">
+<meta property="og:url" content="https://zwl20085.github.io/fpga-neural-em/">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <nav class="nav wrap" aria-label="Primary">
+    <a class="brand" href="#top">
+      <svg aria-hidden="true" width="26" height="26" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M6 16c4-7 16-7 20 0M6 16c4 7 16 7 20 0" fill="none" stroke="#2dd4bf" stroke-width="2"/><circle cx="16" cy="16" r="3" fill="currentColor"/></svg>
+      <span>Neural EM on FPGA</span>
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-menu">
+      <span class="visually-hidden">Menu</span>
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <ul id="nav-menu" class="nav-menu">
+      <li><a href="#motivation">Motivation</a></li>
+      <li><a href="#themes">Themes</a></li>
+      <li><a href="#foundation">Foundation</a></li>
+      <li><a href="#approach">Approach</a></li>
+      <li><a href="#hardware">Hardware</a></li>
+      <li><a href="#roadmap">Roadmap</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main id="main">
+<!-- HERO ---------------------------------------------------------------- -->
+<section class="hero" id="top" aria-labelledby="hero-title">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow">Research project · AMD University Program hardware request</p>
+      <h1 id="hero-title">FPGA Deployment of AI for Science and Engineering</h1>
+      <p class="subtitle">Neural Electromagnetic Models for Electrical Machines</p>
+      <p class="lede">Coordinate-based neural networks can reproduce the magnetic field inside an electrical machine at any point, rotor position and operating condition. This project asks whether such models can run on embedded FPGA hardware <em>without losing the accuracy of the engineering quantities derived from them</em>: flux density, torque, torque ripple, stored energy and iron loss.</p>
+      <div class="cta">
+        <a class="btn btn-primary" href="#approach">Research approach</a>
+        <a class="btn btn-ghost" href="#hardware">Hardware justification</a>
+      </div>
+      <ul class="status-key" aria-label="Status key used on this page">
+        <li><span class="tag tag-existing">Existing</span> modelling frameworks and software inference pipeline</li>
+        <li><span class="tag tag-proposed">Proposed</span> FPGA implementation, onboard benchmarks and HIL demonstrator</li>
+      </ul>
+    </div>
+    <figure class="hero-figure">
+      <img src="assets/img/hero-field.svg" width="520" height="520" alt="Illustration of a four-pole electrical machine cross-section with 36 stator slots; teal flux lines circulate between rotor poles and the stator yoke, and scattered dots mark arbitrary points where a neural field model can be queried.">
+      <figcaption>Illustration. Flux lines come from a synthetic analytic potential, not from a simulation. The dots show arbitrary query points, because a coordinate-based model is a function, not a mesh.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- MOTIVATION ------------------------------------------------------------ -->
+<section id="motivation" class="section" aria-labelledby="motivation-title">
+  <div class="wrap narrow reveal">
+    <p class="eyebrow">Research motivation</p>
+    <h2 id="motivation-title">From accurate desktop models to validated embedded deployment</h2>
+    <p>Finite-element (FE) analysis is the reference method for the electromagnetic design of electrical machines, but a nonlinear FE solution at each rotor position is too slow for interactive design exploration, and far too slow for use alongside a running machine. Neural field models trained on FE data can reproduce the field at a fraction of the cost, and they already do so on desktop GPUs and CPUs.</p>
+    <p>Embedded execution is a different problem. Engineering quantities are not read directly from the network output. They are <strong>derived</strong> from it, and the derivation can amplify small errors:</p>
+    <ul class="ticks">
+      <li><strong>Spatial differentiation.</strong> Flux density is the curl of the predicted vector potential, <span class="math">B = ∇ × (A<sub>z</sub> ẑ)</span>, so error in the gradient of the model output matters more than error in the output itself.</li>
+      <li><strong>Angular finite differences.</strong> Torque from co-energy or virtual work differentiates with respect to rotor position. Torque ripple is a small difference between large values.</li>
+      <li><strong>Harmonic loss calculations.</strong> Iron-loss models weight higher field harmonics more strongly, so quantisation noise that is negligible in A<sub>z</sub> can become significant in loss.</li>
+    </ul>
+    <p>Arithmetic precision chosen for throughput on generic benchmarks may therefore break the physics. No established method yet links the number format of an embedded inference engine to the accuracy of machine-level quantities. This project aims to build that link, evaluate it on hardware, and connect it to measured machine operating conditions.</p>
+  </div>
+</section>
+
+<!-- THEMES ---------------------------------------------------------------- -->
+<section id="themes" class="section tint" aria-labelledby="themes-title">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Research themes</p>
+      <h2 id="themes-title">Three questions, one demonstrator</h2>
+    </div>
+    <div class="cards three">
+      <article class="card reveal">
+        <svg class="card-icon" aria-hidden="true" viewBox="0 0 40 40"><path d="M4 28c6-14 12-14 16 0s10 14 16 0" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="20" cy="20" r="3" fill="currentColor"/></svg>
+        <h3>AI for Science</h3>
+        <p>Physics-aware learning of electromagnetic fields. The project validates physical consistency, not only pointwise error. Does the learned A<sub>z</sub> respect boundary conditions and periodicity, give physically plausible flux density at material interfaces, and stay consistent as the rotor moves?</p>
+      </article>
+      <article class="card reveal">
+        <svg class="card-icon" aria-hidden="true" viewBox="0 0 40 40"><circle cx="20" cy="20" r="14" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M20 20 30 12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M8 30h24" stroke="currentColor" stroke-width="2"/></svg>
+        <h3>AI for Engineering</h3>
+        <p>Engineering quantities are the metric that matters: flux density, electromagnetic torque, torque ripple, stored magnetic energy and iron losses. Every model and every number format is judged by how well it reproduces these quantities relative to the FE reference.</p>
+      </article>
+      <article class="card reveal">
+        <svg class="card-icon" aria-hidden="true" viewBox="0 0 40 40"><rect x="9" y="9" width="22" height="22" rx="3" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M14 4v5M20 4v5M26 4v5M14 31v5M20 31v5M26 31v5M4 14h5M4 20h5M4 26h5M31 14h5M31 20h5M31 26h5" stroke="currentColor" stroke-width="2"/></svg>
+        <h3>AI Deployment</h3>
+        <p>Custom mixed-precision arithmetic, streaming inference over large point sets, on-chip memory organisation for weights and activations, and embedded execution on an MPSoC. The aim is to understand the accuracy–resource–latency trade-off, not only to make inference fast.</p>
+      </article>
+    </div>
+    <article class="card wide reveal">
+      <div>
+        <p class="eyebrow">Cross-cutting theme</p>
+        <h3>Embedded digital twins and hardware-in-the-loop</h3>
+        <p>Model predictions are connected to the measured operating conditions of a machine, such as currents and rotor position, acquired through additional mezzanine hardware. The demonstrator then evaluates whether field-level predictions can be produced alongside a machine at rates suited to monitoring and control studies. Real-time suitability is a question for this project to answer, not an assumption.</p>
+      </div>
+      <span class="tag tag-proposed">Proposed</span>
+    </article>
+  </div>
+</section>
+
+<!-- FOUNDATION ------------------------------------------------------------ -->
+<section id="foundation" class="section" aria-labelledby="foundation-title">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Existing foundation</p>
+      <h2 id="foundation-title">Two research frameworks already in place</h2>
+      <p class="section-intro">The project starts from working software developed by the team. Both repositories are currently private research code; access can be arranged for reviewers on request.</p>
+    </div>
+    <div class="cards two">
+      <article class="card reveal">
+        <div class="card-top"><h3>HairpinFE</h3><span class="tag tag-existing">Existing</span></div>
+        <p class="kicker">Finite-element modelling and electromagnetic postprocessing</p>
+        <p>A modular two-dimensional finite-element package for rotating electrical machines. It builds the geometry from parameters, meshes it, solves the nonlinear magnetostatic or transient field, and rotates the rotor on a moving band. From the solution it computes torque, losses, inductances and related quantities.</p>
+        <p>In this project HairpinFE provides the <strong>reference data</strong> for training and the <strong>reference postprocessing</strong> against which embedded results are judged.</p>
+        <p class="repo" id="cfg-repo-fe"><span class="muted">Repository: private, available to reviewers on request</span></p>
+      </article>
+      <article class="card reveal">
+        <div class="card-top"><h3>Hairpin_AI</h3><span class="tag tag-existing">Existing</span></div>
+        <p class="kicker">Neural electromagnetic field modelling</p>
+        <p>A PyTorch framework of coordinate-based neural field models. Each model takes one row (machine design parameters, operating condition, rotor position, and spatial coordinates) and returns the magnetic vector potential A<sub>z</sub> at that point. Because the model is a function rather than a grid, it can be evaluated on the FE mesh, on a finer grid, or at a single sensor location.</p>
+        <p>Relevant architectures include residual MLPs with Fourier coordinate encoding and GELU activations, with optional rotor-frame features. A versioned input–output schema is stored with every checkpoint, so a separate inference engine can rebuild the model exactly.</p>
+        <p class="repo" id="cfg-repo-ai"><span class="muted">Repository: private, available to reviewers on request</span></p>
+      </article>
+    </div>
+    <figure class="diagram reveal">
+      <img src="assets/img/model-datapath.svg" width="800" height="250" alt="Schematic of the neural field model: a query row of design parameters, operating point, rotor position and coordinates passes through a Fourier encoding and optional rotor-frame features, then a stack of residual blocks (Linear, GELU, Linear, with skip connection), producing Az at the queried point.">
+      <figcaption>Schematic of the existing coordinate-based model family (not to scale). The residual multiply–accumulate stack is the main candidate for FPGA acceleration.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- APPROACH -------------------------------------------------------------- -->
+<section id="approach" class="section tint" aria-labelledby="approach-title">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Technical approach</p>
+      <h2 id="approach-title">From finite-element reference to hardware-in-the-loop</h2>
+      <p class="section-intro">Each stage is checked against the stage before it, so any loss of accuracy can be traced to a specific step: training, number format, hardware mapping, or measurement.</p>
+    </div>
+    <ol class="pipeline reveal" aria-label="Research pipeline">
+      <li class="stage existing">
+        <span class="step">1</span>
+        <h3>FE reference data</h3>
+        <p>HairpinFE solutions across designs, operating points and rotor positions.</p>
+        <span class="tag tag-existing">Existing</span>
+      </li>
+      <li class="stage existing">
+        <span class="step">2</span>
+        <h3>Neural model</h3>
+        <p>Coordinate-based A<sub>z</sub> models trained in Hairpin_AI on existing compute.</p>
+        <span class="tag tag-existing">Existing</span>
+      </li>
+      <li class="stage proposed">
+        <span class="step">3</span>
+        <h3>Precision evaluation</h3>
+        <p>Bit-accurate emulation of fixed-point and mixed-precision formats, scored on derived quantities.</p>
+        <span class="tag tag-proposed">Proposed</span>
+      </li>
+      <li class="stage proposed">
+        <span class="step">4</span>
+        <h3>FPGA inference</h3>
+        <p>Streaming accelerator in programmable logic, using the formats selected in stage 3.</p>
+        <span class="tag tag-proposed">Proposed</span>
+      </li>
+      <li class="stage proposed">
+        <span class="step">5</span>
+        <h3>EM postprocessing</h3>
+        <p>Flux density, torque, energy and loss, partitioned between Arm cores and logic.</p>
+        <span class="tag tag-proposed">Proposed</span>
+      </li>
+      <li class="stage proposed">
+        <span class="step">6</span>
+        <h3>HIL validation</h3>
+        <p>Predictions driven by measured currents and rotor position via mezzanine hardware.</p>
+        <span class="tag tag-proposed">Proposed</span>
+      </li>
+    </ol>
+
+    <div class="cards two approach-detail">
+      <article class="card reveal">
+        <h3>Precision is chosen by the physics</h3>
+        <p>Number formats are selected per layer by measuring their effect on B, torque, ripple, energy and loss against the FE reference, not by output mean-squared error alone. A bit-accurate software emulator of the hardware arithmetic lets this search run before any logic is built, and later confirms that hardware output matches the emulator bit for bit.</p>
+      </article>
+      <article class="card reveal">
+        <h3>Derivatives are handled explicitly</h3>
+        <p>Because flux density needs spatial derivatives of A<sub>z</sub>, the project compares two routes: differentiating the network analytically, which needs extra datapath, and finite differences on the evaluated field, which amplify quantisation noise. The comparison is a research output in its own right.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- HARDWARE -------------------------------------------------------------- -->
+<section id="hardware" class="section" aria-labelledby="hardware-title">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Hardware request and justification</p>
+      <h2 id="hardware-title">One AMD ZCU102 Zynq UltraScale+ MPSoC Evaluation Kit</h2>
+      <p class="section-intro">The project requests the ZCU102 through the AMD University Program donation scheme. This support has been <strong>requested, not awarded</strong>.</p>
+    </div>
+
+    <div class="hw-grid">
+      <div class="reveal">
+        <h3>Verified board features</h3>
+        <dl class="spec">
+          <div><dt>Device</dt><dd>Zynq UltraScale+ XCZU9EG-2FFVB1156E MPSoC</dd></div>
+          <div><dt>DSP slices</dt><dd>2,520</dd></div>
+          <div><dt>Logic cells</dt><dd>599,550</dd></div>
+          <div><dt>Block RAM</dt><dd>32.1 Mb total</dd></div>
+          <div><dt>Processing system</dt><dd>Quad-core Arm Cortex-A53 (APU); dual-core Arm Cortex-R5 (RPU); Mali-400 MP2 GPU</dd></div>
+          <div><dt>Memory</dt><dd>PS-side DDR4 64-bit SODIMM; PL-side DDR4 component memory (16-bit)</dd></div>
+          <div><dt>Expansion</dt><dd>Two VITA 57.1 FMC HPC connectors. HPC0 (J5) provides the full LA bus. HPC1 (J4) implements a subset, LA[00:29]. Mezzanine compatibility must be checked against the board pinout.</dd></div>
+        </dl>
+        <p class="source">Source: AMD, <cite>ZCU102 Evaluation Board User Guide</cite>, UG1182 (v1.7), 21 February 2023 <a href="#ref-ug1182">[1]</a>.</p>
+      </div>
+
+      <div class="reveal">
+        <h3>Why this board</h3>
+        <ol class="reasons">
+          <li><strong>Precision that preserves engineering quantities.</strong> Scientific field prediction may need wider fixed-point or mixed-precision formats in selected layers than inference tuned for classification. Wider multipliers consume more DSP slices per operation, so DSP capacity sets how far the precision study can explore while keeping a useful level of parallelism.</li>
+          <li><strong>More than inference on one chip.</strong> The demonstrator combines the inference engine with field reconstruction, derivative evaluation, buffering of point sets and rotor-position sequences, and acquisition logic. The ZU9EG's programmable logic and on-chip memory leave room for these blocks together.</li>
+          <li><strong>Processor–logic partitioning is a research objective.</strong> Deciding which postprocessing steps belong on the Cortex-A53 cores and which belong in logic is part of the study. The MPSoC lets both options be measured on the same device.</li>
+          <li><strong>A route to hardware-in-the-loop.</strong> The FMC HPC connectors accept compatible ADC and motor- or sensor-interface mezzanine cards. These cards are <em>additional hardware</em>, not built-in ZCU102 capabilities, and connector routing limitations will be checked before any card is selected.</li>
+        </ol>
+      </div>
+    </div>
+
+    <aside class="note reveal" aria-labelledby="kv260-title">
+      <h3 id="kv260-title">Relation to smaller platforms</h3>
+      <p>A Kria KV260 Vision AI Starter Kit can support custom arithmetic and preliminary inference experiments, and the inference kernels developed here are intended to remain portable to such devices. The ZCU102 is not mathematically required for every model. It is requested because of the scope of the <strong>integrated research demonstrator</strong>: precision exploration, inference, postprocessing and acquisition, all on one device with the FMC expansion needed for HIL work.</p>
+    </aside>
+
+    <h3 class="arch-title reveal" id="arch-title">Proposed hardware–software architecture</h3>
+    <figure class="arch reveal" aria-labelledby="arch-title">
+      <div class="arch-board">
+        <p class="arch-label">ZCU102 · XCZU9EG MPSoC</p>
+        <div class="arch-cols">
+          <div class="arch-block ps">
+            <h4>Processing system <span>Arm Cortex-A53 × 4</span></h4>
+            <ul>
+              <li>Configuration and model loading (weights and input–output schema)</li>
+              <li>Communication with the host and experiment control</li>
+              <li>Selected postprocessing, e.g. torque integration and loss summation</li>
+              <li>Benchmark logging: latency, energy, accuracy</li>
+            </ul>
+          </div>
+          <div class="arch-bus" aria-hidden="true"><span>AXI</span></div>
+          <div class="arch-block pl">
+            <h4>Programmable logic <span>DSP · BRAM · fabric</span></h4>
+            <ul>
+              <li>Streaming inference engine for the residual MLP</li>
+              <li>Fourier coordinate encoding</li>
+              <li>Selected field-processing kernels, e.g. flux-density reconstruction</li>
+              <li>Acquisition interface and sample buffering</li>
+            </ul>
+          </div>
+        </div>
+        <div class="arch-mem">PS DDR4 (SODIMM) · PL DDR4: weights, point sets, result buffers</div>
+      </div>
+      <div class="arch-ext">
+        <div class="arch-block ext">
+          <h4>Host workstation</h4>
+          <p>Training (existing resources), FE reference, analysis</p>
+        </div>
+        <div class="arch-block ext add">
+          <h4>FMC mezzanine cards <span class="tag tag-proposed">Additional hardware</span></h4>
+          <p>Compatible ADC and motor/sensor interface for HIL</p>
+        </div>
+      </div>
+      <figcaption>Proposed partitioning (schematic). Training stays on the existing computing resources, and only inference and selected postprocessing move to the board. The final split between processor and logic is a research outcome.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- VALIDATION ------------------------------------------------------------ -->
+<section id="validation" class="section tint" aria-labelledby="validation-title">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Validation</p>
+      <h2 id="validation-title">What will be measured</h2>
+      <p class="section-intro">The project will report all four dimensions together, because a gain in one is meaningful only when the others are stated. No hardware results exist yet. The figures below are planned measurements, not claims.</p>
+    </div>
+    <div class="cards four">
+      <article class="card metric reveal">
+        <h3>Physical accuracy</h3>
+        <p>Error in A<sub>z</sub>, flux density, torque and ripple, stored energy and iron loss relative to HairpinFE, for software floating point, the bit-accurate emulator and on-board output.</p>
+      </article>
+      <article class="card metric reveal">
+        <h3>Latency</h3>
+        <p>Time per point, per field map and per rotor-position sequence, end to end and per stage, compared with the existing CPU/GPU software pipeline.</p>
+      </article>
+      <article class="card metric reveal">
+        <h3>Energy consumption</h3>
+        <p>Board-level energy per field evaluation, using on-board power monitoring where available and external measurement where needed. Method and uncertainty will be reported.</p>
+      </article>
+      <article class="card metric reveal">
+        <h3>Resource utilisation</h3>
+        <p>DSP, LUT, flip-flop and block RAM use per design point, linking each precision choice to its hardware cost.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP --------------------------------------------------------------- -->
+<section id="roadmap" class="section" aria-labelledby="roadmap-title">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Proposed 12-month roadmap</p>
+      <h2 id="roadmap-title">Work plan</h2>
+    </div>
+    <ol class="timeline">
+      <li class="reveal">
+        <p class="when">Months 1–3</p>
+        <h3>Reference benchmarks and precision evaluation</h3>
+        <p>Fix benchmark machines, operating points and FE references. Build the bit-accurate arithmetic emulator. Map how precision affects every derived quantity.</p>
+      </li>
+      <li class="reveal">
+        <p class="when">Months 4–6</p>
+        <h3>Inference accelerator and software integration</h3>
+        <p>Implement the streaming inference engine in programmable logic. Integrate it with Linux on the Cortex-A53 cores and verify it bit for bit against the emulator.</p>
+      </li>
+      <li class="reveal">
+        <p class="when">Months 7–9</p>
+        <h3>Physical validation and postprocessing acceleration</h3>
+        <p>Validate on-board predictions against FE references. Accelerate selected postprocessing kernels and evaluate partitioning options between processor and logic.</p>
+      </li>
+      <li class="reveal">
+        <p class="when">Months 10–12</p>
+        <h3>Hardware benchmarks, documentation and dissemination</h3>
+        <p>Run the full benchmark campaign on accuracy, latency, energy and resources. Document the demonstrator, release benchmark material where permitted, and prepare publications.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- OUTPUTS --------------------------------------------------------------- -->
+<section id="outputs" class="section tint" aria-labelledby="outputs-title">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Expected outputs</p>
+      <h2 id="outputs-title">What the project will deliver</h2>
+    </div>
+    <div class="cards three">
+      <article class="card reveal">
+        <h3>Research demonstrator</h3>
+        <p>A ZCU102-based system running neural electromagnetic field inference with selected postprocessing, extended towards hardware-in-the-loop operation with measured machine conditions.</p>
+      </article>
+      <article class="card reveal">
+        <h3>Reproducible benchmarks</h3>
+        <p>Defined benchmark cases, FE references and measurement procedures, so that accuracy, latency, energy and resource results can be reproduced and compared.</p>
+      </article>
+      <article class="card reveal">
+        <h3>Deployment guidance</h3>
+        <p>Practical guidance on choosing number formats, memory organisation and processor–logic partitioning for scientific neural field models, where derived quantities rather than labels define success.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT --------------------------------------------------------------- -->
+<section id="contact" class="section" aria-labelledby="contact-title">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Team and contact</p>
+      <h2 id="contact-title">People</h2>
+    </div>
+    <div class="cards two">
+      <article class="card reveal">
+        <h3>Project lead</h3>
+        <p class="person"><span data-cfg="leadName" data-placeholder="Name to be confirmed">Name to be confirmed</span><br>
+        <span class="muted" data-cfg="leadRole" data-placeholder="Role to be confirmed">Role to be confirmed</span></p>
+        <p><span id="cfg-affiliation" class="placeholder">Institutional affiliation to be confirmed</span></p>
+        <address id="cfg-address" hidden></address>
+        <p id="cfg-email" class="placeholder">Email address to be confirmed</p>
+        <p id="cfg-profile"></p>
+      </article>
+      <article class="card reveal">
+        <h3>Team</h3>
+        <ul id="cfg-team" class="plain"><li class="placeholder">Further team members to be confirmed</li></ul>
+        <h3 class="mt">Related publications</h3>
+        <ul id="cfg-publications" class="plain"><li class="placeholder">Publication list to be added by the project team</li></ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- REFERENCES ------------------------------------------------------------ -->
+<section id="references" class="section tint" aria-labelledby="references-title">
+  <div class="wrap narrow">
+    <p class="eyebrow">Technical references</p>
+    <h2 id="references-title">References</h2>
+    <ol class="refs">
+      <li id="ref-ug1182">AMD (Xilinx), <cite>ZCU102 Evaluation Board User Guide</cite>, UG1182 (v1.7), Feb. 2023. <a href="https://docs.amd.com/api/khub/documents/rt6tROKcAceWoROXFPMY5w/content" rel="noopener">PDF</a></li>
+      <li>AMD, <cite>AMD University Program: Donation Program</cite>. <a href="https://www.amd.com/en/corporate/university-program/donation-program.html" rel="noopener">Web page</a></li>
+      <li>M. Tancik <i>et al.</i>, “Fourier features let networks learn high frequency functions in low dimensional domains,” in <cite>Proc. NeurIPS</cite>, 2020. <a href="https://arxiv.org/abs/2006.10739" rel="noopener">arXiv:2006.10739</a></li>
+      <li>K. He, X. Zhang, S. Ren and J. Sun, “Deep residual learning for image recognition,” in <cite>Proc. IEEE CVPR</cite>, 2016, pp. 770–778. <a href="https://doi.org/10.1109/CVPR.2016.90" rel="noopener">doi:10.1109/CVPR.2016.90</a></li>
+      <li>D. Hendrycks and K. Gimpel, “Gaussian error linear units (GELUs),” 2016. <a href="https://arxiv.org/abs/1606.08415" rel="noopener">arXiv:1606.08415</a></li>
+      <li>M. Raissi, P. Perdikaris and G. E. Karniadakis, “Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations,” <cite>J. Comput. Phys.</cite>, vol. 378, pp. 686–707, 2019. <a href="https://doi.org/10.1016/j.jcp.2018.10.045" rel="noopener">doi:10.1016/j.jcp.2018.10.045</a></li>
+      <li>A. Arkkio, “Analysis of induction motors based on the numerical solution of the magnetic field and circuit equations,” <cite>Acta Polytechnica Scandinavica, Electrical Engineering Series</cite>, no. 59, 1987.</li>
+      <li>G. Bertotti, “General properties of power losses in soft ferromagnetic materials,” <cite>IEEE Trans. Magn.</cite>, vol. 24, no. 1, pp. 621–630, 1988. <a href="https://doi.org/10.1109/20.43994" rel="noopener">doi:10.1109/20.43994</a></li>
+      <li>B. Jacob <i>et al.</i>, “Quantization and training of neural networks for efficient integer-arithmetic-only inference,” in <cite>Proc. IEEE CVPR</cite>, 2018, pp. 2704–2713. <a href="https://arxiv.org/abs/1712.05877" rel="noopener">arXiv:1712.05877</a></li>
+      <li>Y. Umuroglu <i>et al.</i>, “FINN: A framework for fast, scalable binarized neural network inference,” in <cite>Proc. ACM/SIGDA FPGA</cite>, 2017, pp. 65–74. <a href="https://arxiv.org/abs/1612.07119" rel="noopener">arXiv:1612.07119</a></li>
+      <li>J. Duarte <i>et al.</i>, “Fast inference of deep neural networks in FPGAs for particle physics,” <cite>J. Instrum.</cite>, vol. 13, P07027, 2018. <a href="https://arxiv.org/abs/1804.06913" rel="noopener">arXiv:1804.06913</a></li>
+    </ol>
+  </div>
+</section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <p><strong>FPGA Deployment of AI for Science and Engineering: Neural Electromagnetic Models for Electrical Machines</strong></p>
+    <p class="muted-inv">This page describes a proposed research project. Hardware support from AMD has been requested through the AMD University Program and has not been awarded. AMD, Zynq, UltraScale+ and Kria are trademarks of Advanced Micro Devices, Inc. Their use here does not imply endorsement. All illustrations are schematic.</p>
+    <p class="muted-inv">Last updated <span id="cfg-updated">8 October 2026</span>.</p>
+  </div>
+</footer>
+
+<script src="assets/js/site-config.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>

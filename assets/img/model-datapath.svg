@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 250" role="img" aria-labelledby="t d" font-family="Inter, 'Segoe UI', system-ui, sans-serif">
+<title id="t">Schematic of the coordinate-based neural field model</title>
+<desc id="d">Inputs (design parameters, operating point, rotor position and spatial coordinates x, y) pass through a Fourier coordinate encoding and optional rotor-frame features, then a stack of residual blocks with GELU activations, producing the magnetic vector potential Az at the queried point. Schematic, not to scale.</desc>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="#0f766e"/></marker>
+</defs>
+<rect width="800" height="250" fill="#ffffff"/>
+<g font-size="13" fill="#13294b">
+<!-- inputs -->
+<g>
+<rect x="16" y="28" width="150" height="194" rx="10" fill="#eef3f8" stroke="#9fb4cc"/>
+<text x="91" y="52" text-anchor="middle" font-weight="700">Query row</text>
+<text x="30" y="84">design parameters</text>
+<text x="30" y="112">operating point</text>
+<text x="30" y="140">rotor position θ</text>
+<text x="30" y="168">coordinates (x, y)</text>
+<text x="30" y="200" font-size="11" fill="#4a5b72">one row per point</text>
+</g>
+<path d="M170 125 H206" stroke="#0f766e" stroke-width="2" marker-end="url(#a)"/>
+<!-- encoding -->
+<g>
+<rect x="210" y="40" width="150" height="76" rx="10" fill="#e6f4f2" stroke="#0f766e"/>
+<text x="285" y="72" text-anchor="middle" font-weight="700">Fourier encoding</text>
+<text x="285" y="94" text-anchor="middle" font-size="12">γ(x, y) = [sin Bv, cos Bv]</text>
+<rect x="210" y="134" width="150" height="76" rx="10" fill="#ffffff" stroke="#0f766e" stroke-dasharray="5 4"/>
+<text x="285" y="166" text-anchor="middle" font-weight="700">Rotor-frame features</text>
+<text x="285" y="188" text-anchor="middle" font-size="12">optional</text>
+</g>
+<path d="M364 125 H400" stroke="#0f766e" stroke-width="2" marker-end="url(#a)"/>
+<!-- residual stack -->
+<g>
+<rect x="404" y="28" width="236" height="194" rx="10" fill="#13294b"/>
+<text x="522" y="54" text-anchor="middle" font-weight="700" fill="#f7f5f0">Residual MLP</text>
+<g fill="#1f3d68" stroke="#5eead4" stroke-width="1">
+<rect x="424" y="70" width="196" height="30" rx="6"/>
+<rect x="424" y="110" width="196" height="30" rx="6"/>
+<rect x="424" y="150" width="196" height="30" rx="6"/>
+</g>
+<g fill="#f7f5f0" font-size="12" text-anchor="middle">
+<text x="522" y="90">Linear → GELU → Linear  (+ skip)</text>
+<text x="522" y="130">Linear → GELU → Linear  (+ skip)</text>
+<text x="522" y="170">⋮  N blocks</text>
+</g>
+<text x="522" y="206" text-anchor="middle" font-size="11" fill="#b9c7da">dense multiply–accumulate: the FPGA kernel</text>
+</g>
+<path d="M644 125 H680" stroke="#0f766e" stroke-width="2" marker-end="url(#a)"/>
+<!-- output -->
+<g>
+<rect x="684" y="88" width="100" height="74" rx="10" fill="#e6f4f2" stroke="#0f766e"/>
+<text x="734" y="120" text-anchor="middle" font-weight="700" font-size="16">A<tspan font-size="11" dy="4">z</tspan></text>
+<text x="734" y="144" text-anchor="middle" font-size="11" dy="0">at (x, y, θ)</text>
+</g>
+</g>
+</svg>
